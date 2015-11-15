@@ -1,6 +1,7 @@
-package ahj.swingrouter.router;
+package ahj.swingrouter.testapp;
 
 import ahj.swingrouter.history.History;
+import ahj.swingrouter.router.Router;
 
 public class AppContext {
 	private final History history;

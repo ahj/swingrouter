@@ -6,8 +6,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 
-import ahj.swingrouter.router.AppContext;
-
 @SuppressWarnings("serial")
 public class RouteAction extends AbstractAction {
 	private final String url;

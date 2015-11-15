@@ -14,7 +14,6 @@ import javax.swing.UIManager;
 import ahj.swingrouter.history.History;
 import ahj.swingrouter.history.HistoryEvent;
 import ahj.swingrouter.history.HistoryListener;
-import ahj.swingrouter.router.AppContext;
 import ahj.swingrouter.router.Router;
 import net.miginfocom.swing.MigLayout;
 
