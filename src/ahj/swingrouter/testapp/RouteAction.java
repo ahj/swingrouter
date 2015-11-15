@@ -4,23 +4,20 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.SwingUtilities;
+
+import ahj.swingrouter.router.Router;
 
 @SuppressWarnings("serial")
 public class RouteAction extends AbstractAction {
-	private final String url;
+	private final String token;
 	
-	public RouteAction(String label, String url) {
+	public RouteAction(String label, String token) {
 		super(label);
-		this.url = url;
+		this.token = token;
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent event) {
-		AppFrame owner = (AppFrame)SwingUtilities.getAncestorOfClass(AppFrame.class, ((Component)event.getSource()));
-		if (owner != null) {
-			AppContext context = owner.getContext();
-			context.getRouter().redirectTo(url);
-		}
+		Router.getController((Component)event.getSource()).redirectTo(token);
 	}
 }

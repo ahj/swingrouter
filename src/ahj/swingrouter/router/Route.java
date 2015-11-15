@@ -11,4 +11,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Route {
 	String url();
+	boolean caseInsensitive() default true;
 }

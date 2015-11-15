@@ -15,10 +15,11 @@ import ahj.swingrouter.history.History;
 import ahj.swingrouter.history.HistoryEvent;
 import ahj.swingrouter.history.HistoryListener;
 import ahj.swingrouter.router.Router;
+import ahj.swingrouter.router.RouterRedirect;
 import net.miginfocom.swing.MigLayout;
 
 @SuppressWarnings("serial")
-public class AppFrame extends JFrame {
+public class AppFrame extends JFrame implements RouterRedirect {
 	private final AppContext context;
 	private final JButton back = new JButton("<");
 	private final JButton forward = new JButton(">");
@@ -95,5 +96,15 @@ public class AppFrame extends JFrame {
 				frame.setVisible(true);
 			}
 		});
+	}
+
+	@Override
+	public boolean redirectTo(String token) {
+		return getContext().getRouter().redirectTo(token);
+	}
+
+	@Override
+	public boolean redirectTo(String token, boolean force) {
+		return getContext().getRouter().redirectTo(token, force);
 	}
 }

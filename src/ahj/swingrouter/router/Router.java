@@ -1,12 +1,17 @@
 package ahj.swingrouter.router;
 
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.HashMap;
+import java.lang.reflect.Constructor;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 
 import org.reflections.Reflections;
@@ -20,8 +25,8 @@ public class Router {
 	private String defaultToken;
 	private Container defaultContainer;
 	private boolean firstTime = true;
-	private Map<String, Class<?>> routes = new HashMap<String, Class<?>>();
-
+	private Set<RouteCfg> configs = new HashSet<RouteCfg>();
+	
 	/** List of listeners */
     protected EventListenerList listenerList = new EventListenerList();
     
@@ -144,16 +149,33 @@ public class Router {
 		
 	public void execute(String hash) {
 		//Look up the hash to find a match
-		Class<?> viewType = recognize(hash);
+		RouteCfg cfg = recognize(hash);
 
-		if (viewType == null) {
-			viewType = recognize("notFound");
+		if (cfg == null) {
+			cfg = recognize("notFound");
 		}
 
 		Object view = null;
 		
 		try {
-			view = viewType.newInstance();
+			// Pass parameters to the view
+			Pattern pattern = cfg.getPattern();
+			Matcher matcher = pattern.matcher(hash);
+			matcher.matches();
+			Map<String, String> parameters = cfg.match(matcher);
+			
+			String[] argNames = cfg.getParameterNames();
+			@SuppressWarnings("unchecked")
+			Class<String>[] argClasses = new Class[argNames.length];
+			Object[] argValues = new Object[argNames.length];
+			for (int i = 0; i < argNames.length; i++) {
+				argClasses[i] = String.class;
+				argValues[i] = parameters.get(argNames[i]);
+			}
+			
+			Constructor<?> c = cfg.getType().getConstructor(argClasses);
+			
+			view = c.newInstance(argValues);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -171,15 +193,58 @@ public class Router {
 		}
 	}
 
-	protected Class<?> recognize(String hash) {
-		Class<?> type = routes.get(hash);
-		return (type != null) ? type : null;
+	protected RouteCfg recognize(String hash) {
+		for (RouteCfg cfg : configs) {
+			Matcher matcher = cfg.getPattern().matcher(hash);
+			if (matcher.matches()) {
+				return cfg;
+			}
+		}
+		return null;
 	}
 	
 	protected Route getUnmatchedRoute(String hash) {
 		return null;
 	}
 	
+	public static void main(String...args) {
+//		String routeHash = "section/:section/user/:id";
+//		String hash = "section/4a/user/1234";
+		String routeHash = "section/:section";
+		String hash = "section/4a";
+		
+		RouteCfg cfg = new RouteCfg(routeHash, null);
+		Matcher routeMatcher = cfg.getPattern().matcher(hash);
+		
+		if (routeMatcher.matches()) {
+			System.out.println("matches " + cfg.getHash());
+			
+			Map<String, String> data = cfg.match(routeMatcher);
+			
+			for (Map.Entry<String, String> entry : data.entrySet()) {
+				System.out.println("  " + entry.getKey() + " = " + entry.getValue());
+			}
+		}
+	}
+	
+	/**
+     * Takes the configured url string including wild-cards and returns a regex that can be
+     * used to match against a url.
+     *
+     * @private
+     * @param {String} url The url string.
+     * @return {RegExp} The matcher regex.
+     */
+    public static Pattern createPattern(String url, String[] paramsInMatchString) {
+        for (int i = 0; i < paramsInMatchString.length; i++) {
+            String matcher = "([%a-zA-Z0-9\\-\\_\\s,]+)";
+
+            url = url.replace(":" + paramsInMatchString[i], matcher);
+        }
+
+        return Pattern.compile(url);
+    }
+
 	protected void scanRoutes() {
 		Reflections reflections = new Reflections("");
 
@@ -190,7 +255,14 @@ public class Router {
 
 			System.out.println(route.url() + " > " + type.getName());
 			
-			routes.put(route.url(), type);
+			RouteCfg cfg = new RouteCfg(route.url(), type);
+			
+			configs.add(cfg);
 		}
+	}
+	
+	public static RouterRedirect getController(Component source) {
+		RouterRedirect rr = (RouterRedirect)SwingUtilities.getAncestorOfClass(RouterRedirect.class, source);
+		return rr;
 	}
 }
